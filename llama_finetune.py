@@ -10,7 +10,6 @@ import glob
 import argparse
 import torch
 import random
-import warnings
 import numpy as np
 import pandas as pd
 from pymatgen.core.structure import Structure
@@ -18,20 +17,11 @@ from pathlib import Path
 
 from dataclasses import dataclass
 import transformers
-from transformers import ( 
-    LlamaForCausalLM,
-    LlamaTokenizer, 
-    Trainer, 
-    TrainingArguments
-)
+from transformers import LlamaForCausalLM, LlamaTokenizer, Trainer, TrainingArguments
 
 from torch.utils.data import Dataset
 
-from peft import (
-    LoraConfig, 
-    get_peft_model, 
-    prepare_model_for_kbit_training
-)
+from peft import LoraConfig, get_peft_model
 
 IGNORE_INDEX = -100
 MAX_LENGTH = 2048
@@ -39,6 +29,7 @@ DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "<s>"
 DEFAULT_UNK_TOKEN = "<unk>"
+
 
 def get_crystal_string(cif_str):
     structure = Structure.from_str(cif_str, fmt="cif")
@@ -53,16 +44,21 @@ def get_crystal_string(cif_str):
     atom_ids = structure.species
     frac_coords = structure.frac_coords
 
-    crystal_str = \
-        " ".join(["{0:.1f}".format(x) for x in lengths]) + "\n" + \
-        " ".join([str(int(x)) for x in angles]) + "\n" + \
-        "\n".join([
-            str(t) + "\n" + " ".join([
-                "{0:.2f}".format(x) for x in c
-            ]) for t,c in zip(atom_ids, frac_coords)
-        ])
+    crystal_str = (
+        " ".join(["{0:.1f}".format(x) for x in lengths])
+        + "\n"
+        + " ".join([str(int(x)) for x in angles])
+        + "\n"
+        + "\n".join(
+            [
+                str(t) + "\n" + " ".join(["{0:.2f}".format(x) for x in c])
+                for t, c in zip(atom_ids, frac_coords)
+            ]
+        )
+    )
 
     return crystal_str
+
 
 class CifDataset(Dataset):
     def __init__(
@@ -84,15 +80,14 @@ class CifDataset(Dataset):
 
         self.format_options = format_options
         self.w_attributes = w_attributes
-   
+
     def crystal_string(self, input_dict):
-        k = 'cif' if 'cif' in input_dict else 'cif_str'
+        k = "cif" if "cif" in input_dict else "cif_str"
         return get_crystal_string(input_dict[k])
 
     def generation_task(self, input_dict):
-
         prompt = "Below is a description of a bulk material. "
-        
+
         all_attributes = [
             "formation_energy_per_atom",
             "band_gap",
@@ -119,7 +114,9 @@ class CifDataset(Dataset):
                 if attr == "elements":
                     prompt += f"{prompt_lookup[attr]} {', '.join(input_dict[attr])}. "
                 elif attr in ["formation_energy_per_atom", "band_gap", "e_above_hull"]:
-                    prompt += f"{prompt_lookup[attr]} {round(float(input_dict[attr]), 4)}. "
+                    prompt += (
+                        f"{prompt_lookup[attr]} {round(float(input_dict[attr]), 4)}. "
+                    )
                 else:
                     prompt += f"{prompt_lookup[attr]} {input_dict[attr]}. "
 
@@ -131,7 +128,7 @@ class CifDataset(Dataset):
         crystal_str = self.crystal_string(input_dict)
 
         tokens = self.llama_tokenizer(
-            prompt + crystal_str  + self.llama_tokenizer.eos_token,
+            prompt + crystal_str + self.llama_tokenizer.eos_token,
             return_tensors="pt",
             max_length=MAX_LENGTH,
             truncation=True,
@@ -140,22 +137,19 @@ class CifDataset(Dataset):
         return tokens
 
     def infill_task(self, input_dict):
-        
         prompt = (
-            'Below is a partial description of a bulk material where one '
+            "Below is a partial description of a bulk material where one "
             'element has been replaced with the string "[MASK]":\n'
         )
 
-        k = 'cif' if 'cif' in input_dict else 'cif_str'
+        k = "cif" if "cif" in input_dict else "cif_str"
         structure = Structure.from_str(input_dict[k], fmt="cif")
         species = [str(s) for s in structure.species]
         species_to_remove = random.choice(species)
 
         crystal_string = self.crystal_string(input_dict)
 
-        partial_crystal_str = crystal_string.replace(
-            species_to_remove, "[MASK]"
-        )
+        partial_crystal_str = crystal_string.replace(species_to_remove, "[MASK]")
 
         infill_str = prompt + partial_crystal_str + "\n"
 
@@ -181,8 +175,9 @@ class CifDataset(Dataset):
             tokens = self.infill_task(input_dict)
 
         input_ids = labels = tokens.input_ids[0]
-        input_ids_lens = labels_lens = tokens.input_ids.ne(
-            self.llama_tokenizer.pad_token_id).sum().item()
+        input_ids_lens = labels_lens = (
+            tokens.input_ids.ne(self.llama_tokenizer.pad_token_id).sum().item()
+        )
         return dict(
             input_ids=input_ids,
             labels=labels,
@@ -201,6 +196,7 @@ class CifDataset(Dataset):
         vals = self.tokenize(vals)
         return vals
 
+
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
@@ -210,20 +206,23 @@ class DataCollatorForSupervisedDataset(object):
     def __call__(self, instances):
         # print(instances)
         input_ids, labels = tuple(
-            [instance[key].clone().detach() for instance in instances] 
-                for key in ("input_ids", "labels")
+            [instance[key].clone().detach() for instance in instances]
+            for key in ("input_ids", "labels")
         )
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
-        labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
+        labels = torch.nn.utils.rnn.pad_sequence(
+            labels, batch_first=True, padding_value=IGNORE_INDEX
+        )
         return dict(
             input_ids=input_ids,
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-def setup_datasets(args, llama_tokenizer, transform_args={}):    
+
+def setup_datasets(args, llama_tokenizer, transform_args={}):
     format_options = {
         "permute_composition": args.format_permute_composition,
         "permute_structure": args.format_permute_structure,
@@ -231,7 +230,7 @@ def setup_datasets(args, llama_tokenizer, transform_args={}):
 
     datasets = {
         "train": CifDataset(
-            str(args.data_path / "train.csv"), 
+            str(args.data_path / "train.csv"),
             format_options,
             llama_tokenizer=llama_tokenizer,
             w_attributes=args.w_attributes,
@@ -248,7 +247,7 @@ def setup_datasets(args, llama_tokenizer, transform_args={}):
 
 
 def setup_training_args(args):
-    output_dir= args.expdir / args.run_name
+    output_dir = args.expdir / args.run_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.debug:
@@ -256,7 +255,7 @@ def setup_training_args(args):
     os.environ["ACCELERATE_MIXED_PRECISION"] = "no"
     training_args = TrainingArguments(
         fsdp=False,
-        fp16=not args.fp8,
+        fp16=not args.fp4,
         bf16=False,
         gradient_checkpointing=False,
         ddp_find_unused_parameters=False,
@@ -278,13 +277,14 @@ def setup_training_args(args):
         report_to="wandb",
         dataloader_num_workers=8,
         remove_unused_columns=False,
-        label_names=["crystal_ids"], #this is just to get trainer to behave how I want
+        label_names=["crystal_ids"],  # this is just to get trainer to behave how I want
     )
     return training_args
 
+
 def smart_tokenizer_and_embedding_resize(
-    special_tokens_dict, 
-    llama_tokenizer, 
+    special_tokens_dict,
+    llama_tokenizer,
     model,
 ):
     """Resize tokenizer and embedding.
@@ -298,11 +298,16 @@ def smart_tokenizer_and_embedding_resize(
         input_embeddings = model.get_input_embeddings().weight.data
         output_embeddings = model.get_output_embeddings().weight.data
 
-        input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
-        output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
+        input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(
+            dim=0, keepdim=True
+        )
+        output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(
+            dim=0, keepdim=True
+        )
 
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
+
 
 def setup_model(args, rank):
     llama_options = args.model_name.split("-")
@@ -317,7 +322,7 @@ def setup_model(args, rank):
 
     model = LlamaForCausalLM.from_pretrained(
         model_string,
-        load_in_8bit=args.fp8,
+        load_in_4bit=args.fp4,
         device_map={"": rank},
     )
 
@@ -357,6 +362,7 @@ def setup_model(args, rank):
 
     return model, llama_tokenizer
 
+
 def setup_trainer(args):
     training_args = setup_training_args(args)
     model, llama_tokenizer = setup_model(args, training_args.local_rank)
@@ -364,7 +370,7 @@ def setup_trainer(args):
     datasets = setup_datasets(args, llama_tokenizer)
 
     data_collator = DataCollatorForSupervisedDataset(
-        tokenizer=llama_tokenizer, 
+        tokenizer=llama_tokenizer,
     )
 
     trainer = Trainer(
@@ -376,6 +382,7 @@ def setup_trainer(args):
     )
 
     return trainer
+
 
 def main(args):
     trainer = setup_trainer(args)
@@ -389,12 +396,13 @@ def main(args):
     trainer.save_state()
     trainer.save_model()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-name", type=str, required=True)
     parser.add_argument("--expdir", type=Path, default="exp")
     parser.add_argument("--model_name", default="7b")
-    parser.add_argument("--fp8", action="store_true", default=True)
+    parser.add_argument("--fp4", action="store_true", default=True)
     parser.add_argument("--lora-rank", type=int, default=8)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
@@ -408,8 +416,12 @@ if __name__ == "__main__":
     parser.add_argument("--weight-decay", type=float, default=0.0)
     parser.add_argument("--eval-freq", default=1000, type=int)
     parser.add_argument("--save-freq", default=500, type=int)
-    parser.add_argument("--format-permute-composition", action="store_true", default=False)
-    parser.add_argument("--format-permute-structure", action="store_true", default=False)
+    parser.add_argument(
+        "--format-permute-composition", action="store_true", default=False
+    )
+    parser.add_argument(
+        "--format-permute-structure", action="store_true", default=False
+    )
     parser.add_argument("--w-attributes", type=int, default=1)
     parser.add_argument("--resume-dir", type=Path, default=None)
     parser.add_argument("--debug", action="store_true", default=False)
