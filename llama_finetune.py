@@ -74,6 +74,7 @@ class CifDataset(Dataset):
             raise ValueError(f"CSV file {csv_fn} does not exist")
 
         df = pd.concat([pd.read_csv(fn) for fn in glob.glob(csv_fn)])
+        df = df.head(1000)
         self.inputs = df.to_dict(orient="records")
 
         self.llama_tokenizer = llama_tokenizer
