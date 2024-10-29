@@ -393,7 +393,18 @@ def main(args):
     if args.resume_dir is not None:
         train_result = trainer.train(resume_from_checkpoint=args.resume_dir)
     else:
-        train_result = trainer.train()
+        # Modify training loop to add memory checks
+        for step, _ in enumerate(trainer.get_train_dataloader()):
+            # Pre-step memory summary
+            print(f"Memory Summary before step {step}:")
+            print(torch.cuda.memory_summary())
+
+            # Perform training step
+            train_result = trainer.train()
+
+            # Post-step memory summary
+            print(f"Memory Summary after step {step}:")
+            print(torch.cuda.memory_summary())
 
     print(train_result)
     trainer.save_state()
