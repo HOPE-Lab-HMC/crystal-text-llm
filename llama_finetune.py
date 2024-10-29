@@ -194,6 +194,10 @@ class CifDataset(Dataset):
 
         vals = self.inputs[index]
         vals = self.tokenize(vals)
+        print(
+            f"Sample {index} sizes: input_ids_len={len(vals['input_ids'])}, labels_len={len(vals['labels'])}"
+        )
+
         return vals
 
 
@@ -209,12 +213,16 @@ class DataCollatorForSupervisedDataset(object):
             [instance[key].clone().detach() for instance in instances]
             for key in ("input_ids", "labels")
         )
+        print(f"Before padding: {input_ids.shape}, {labels.shape}")
+
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
         labels = torch.nn.utils.rnn.pad_sequence(
             labels, batch_first=True, padding_value=IGNORE_INDEX
         )
+        print(f"After padding: {input_ids.shape}, {labels.shape}")
+
         return dict(
             input_ids=input_ids,
             labels=labels,
