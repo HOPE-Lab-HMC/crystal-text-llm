@@ -74,7 +74,6 @@ class CifDataset(Dataset):
             raise ValueError(f"CSV file {csv_fn} does not exist")
 
         df = pd.concat([pd.read_csv(fn) for fn in glob.glob(csv_fn)])
-        df = df.head(1000)
         self.inputs = df.to_dict(orient="records")
 
         self.llama_tokenizer = llama_tokenizer
@@ -387,6 +386,9 @@ def setup_trainer(args):
 
 def main(args):
     trainer = setup_trainer(args)
+
+    print("Memory Summary after Trainer setup:")
+    print(torch.cuda.memory_summary())
 
     if args.resume_dir is not None:
         train_result = trainer.train(resume_from_checkpoint=args.resume_dir)
