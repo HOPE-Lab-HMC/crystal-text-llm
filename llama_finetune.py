@@ -343,6 +343,8 @@ def setup_model(args, rank):
 
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
+    for name, param in model.named_parameters():
+        print(f"{name} requires_grad: {param.requires_grad}")
 
     special_tokens_dict = dict()
     if llama_tokenizer.pad_token is None:
