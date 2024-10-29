@@ -213,7 +213,6 @@ class DataCollatorForSupervisedDataset(object):
             [instance[key].clone().detach() for instance in instances]
             for key in ("input_ids", "labels")
         )
-        print(f"Before padding: {input_ids.shape}, {labels.shape}")
 
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
@@ -221,7 +220,6 @@ class DataCollatorForSupervisedDataset(object):
         labels = torch.nn.utils.rnn.pad_sequence(
             labels, batch_first=True, padding_value=IGNORE_INDEX
         )
-        print(f"After padding: {input_ids.shape}, {labels.shape}")
 
         return dict(
             input_ids=input_ids,
@@ -351,8 +349,6 @@ def setup_model(args, rank):
 
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-    for name, param in model.named_parameters():
-        print(f"{name} requires_grad: {param.requires_grad}")
 
     special_tokens_dict = dict()
     if llama_tokenizer.pad_token is None:
