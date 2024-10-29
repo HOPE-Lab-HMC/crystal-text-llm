@@ -257,7 +257,7 @@ def setup_training_args(args):
         fsdp=False,
         fp16=not args.fp4,
         bf16=False,
-        gradient_checkpointing=True,
+        gradient_checkpointing=False,
         ddp_find_unused_parameters=False,
         num_train_epochs=args.num_epochs,
         eval_steps=args.eval_freq,
@@ -388,9 +388,6 @@ def setup_trainer(args):
 
 def main(args):
     trainer = setup_trainer(args)
-
-    print("Memory Summary after Trainer setup:")
-    print(torch.cuda.memory_summary())
 
     if args.resume_dir is not None:
         train_result = trainer.train(resume_from_checkpoint=args.resume_dir)
