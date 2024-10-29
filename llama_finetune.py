@@ -257,7 +257,7 @@ def setup_training_args(args):
         fsdp=False,
         fp16=not args.fp4,
         bf16=False,
-        gradient_checkpointing=False,
+        gradient_checkpointing=True,
         ddp_find_unused_parameters=False,
         num_train_epochs=args.num_epochs,
         eval_steps=args.eval_freq,
@@ -395,18 +395,7 @@ def main(args):
     if args.resume_dir is not None:
         train_result = trainer.train(resume_from_checkpoint=args.resume_dir)
     else:
-        # Modify training loop to add memory checks
-        for step, _ in enumerate(trainer.get_train_dataloader()):
-            # Pre-step memory summary
-            print(f"Memory Summary before step {step}:")
-            print(torch.cuda.memory_summary())
-
-            # Perform training step
-            train_result = trainer.train()
-
-            # Post-step memory summary
-            print(f"Memory Summary after step {step}:")
-            print(torch.cuda.memory_summary())
+        train_result = trainer.train()
 
     print(train_result)
     trainer.save_state()
