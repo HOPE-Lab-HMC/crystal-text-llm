@@ -169,10 +169,10 @@ class CifDataset(Dataset):
         return tokens
 
     def tokenize(self, input_dict):
-        if random.random() < 0.66:
-            tokens = self.generation_task(input_dict)
-        else:
-            tokens = self.infill_task(input_dict)
+        # if random.random() < 0.66:
+        tokens = self.generation_task(input_dict)
+        # else:
+        #     tokens = self.infill_task(input_dict)
 
         input_ids = labels = tokens.input_ids[0]
         input_ids_lens = labels_lens = (
