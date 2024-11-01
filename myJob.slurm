@@ -20,5 +20,4 @@
 #First Executable Line
 conda activate crystal-llm
 python3 llama_finetune.py --run-name 7b-test-run --model 7b
-2
-3abc0031fed86d7eb9c7c5207379644e38792d4a
+3
