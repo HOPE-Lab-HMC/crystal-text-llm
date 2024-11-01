@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##NECESSARY JOB SPECIFICATIONS
-#SBATCH --job-name=HopeLabLLM  #Set the job name to Example_SNSC_GPU
+#SBATCH --job-name=HopeLabTest1  #Set the job name to Example_SNSC_GPU
 #SBATCH --time=00:05:00              #Set the wall clock limit to 30hr 30min
 #SBATCH --nodes=1                    #Request 1 node
 #SBATCH --ntasks-per-node=1          #Request 1 task
