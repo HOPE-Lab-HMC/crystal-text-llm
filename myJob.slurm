@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ##NECESSARY JOB SPECIFICATIONS
-#SBATCH --job-name=HopeLabTest1  #Set the job name to Example_SNSC_GPU
-#SBATCH --time=00:05:00              #Set the wall clock limit to 30hr 30min
+#SBATCH --job-name=HopeLabTest2WandBY      #Set the job name to Example_SNSC_GPU
+#SBATCH --time=00:15:00              #Set the wall clock limit to 30hr 30min
 #SBATCH --nodes=1                    #Request 1 node
 #SBATCH --ntasks-per-node=1          #Request 1 task
 #SBATCH --mem=128G                  #Request 128G (488GB) per node
@@ -15,8 +15,10 @@
 ##OPTIONAL JOB SPECIFICATIONS
 ##SBATCH --account=157248400183      
 ##SBATCH --mail-type=ALL             #Send email on all job events
-##SBATCH --mail-user=rodesai@hmc.edu   #Send all emails to email_address
+##SBATCH --mail-user=rodesai@hmc.edu  #Send all emails to email_address
 
 #First Executable Line
 conda activate crystal-llm
 python3 llama_finetune.py --run-name 7b-test-run --model 7b
+2
+3abc0031fed86d7eb9c7c5207379644e38792d4a
