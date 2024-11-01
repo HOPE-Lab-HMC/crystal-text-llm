@@ -18,3 +18,5 @@
 ##SBATCH --mail-user=rodesai@hmc.edu   #Send all emails to email_address
 
 #First Executable Line
+conda activate crystal-llm
+python3 llama_finetune.py --run-name 7b-test-run --model 7b
