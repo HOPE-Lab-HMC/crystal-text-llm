@@ -1,0 +1,39 @@
+
+CondaError: Run 'conda init' before 'conda activate'
+
+
+CondaError: Run 'conda init' before 'conda activate'
+
+/scratch/user/u.rd235078/.conda/envs/crystal-llm/lib/python3.9/site-packages/transformers/training_args.py:1559: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+/scratch/user/u.rd235078/.conda/envs/crystal-llm/lib/python3.9/site-packages/transformers/training_args.py:1559: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+The `load_in_4bit` and `load_in_8bit` arguments are deprecated and will be removed in the future versions. Please, pass a `BitsAndBytesConfig` object in `quantization_config` argument instead.
+The `load_in_4bit` and `load_in_8bit` arguments are deprecated and will be removed in the future versions. Please, pass a `BitsAndBytesConfig` object in `quantization_config` argument instead.
+Traceback (most recent call last):
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 418, in <module>
+Traceback (most recent call last):
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 418, in <module>
+    main(args)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 381, in main
+    main(args)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 381, in main
+    trainer = setup_trainer(args)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 362, in setup_trainer
+    trainer = setup_trainer(args)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 362, in setup_trainer
+    model, llama_tokenizer = setup_model(args, training_args.local_rank)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 318, in setup_model
+    model, llama_tokenizer = setup_model(args, training_args.local_rank)
+  File "/scratch/user/u.rd235078/crystal-text-llm/llama_finetune.py", line 318, in setup_model
+    model = LlamaForCausalLM.from_pretrained(
+  File "/scratch/user/u.rd235078/.conda/envs/crystal-llm/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3913, in from_pretrained
+    model = LlamaForCausalLM.from_pretrained(
+  File "/scratch/user/u.rd235078/.conda/envs/crystal-llm/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3913, in from_pretrained
+    raise EnvironmentError(
+OSError: meta-llama/Llama-2-7b-hf does not appear to have a file named pytorch_model.bin, model.safetensors, tf_model.h5, model.ckpt or flax_model.msgpack.
+    raise EnvironmentError(
+OSError: meta-llama/Llama-2-7b-hf does not appear to have a file named pytorch_model.bin, model.safetensors, tf_model.h5, model.ckpt or flax_model.msgpack.
+/var/spool/slurmd/job282335/slurm_script: line 23: 3: command not found
+/var/spool/slurmd/job282334/slurm_script: line 23: 2: command not found
+/var/spool/slurmd/job282334/slurm_script: line 24: 3abc0031fed86d7eb9c7c5207379644e38792d4a: command not found
